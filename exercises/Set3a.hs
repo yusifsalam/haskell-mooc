@@ -100,7 +100,7 @@ palindrome xs = reverse xs == xs
 
 capitalize :: String -> String
 capitalize xs = unwords . map capitalizeFirst $ words xs
-    where capitalizeFirst xs = (toUpper $ head xs) : tail xs
+    where capitalizeFirst xs = toUpper (head xs) : tail xs
 
 ------------------------------------------------------------------------------
 -- Ex 6: powers k max should return all the powers of k that are less
@@ -117,7 +117,7 @@ capitalize xs = unwords . map capitalizeFirst $ words xs
 --   * the function takeWhile
 
 powers :: Int -> Int -> [Int]
-powers k max = takeWhile (\x -> x <= max) $ map (k^) [0..max] 
+powers k max = takeWhile (<= max) $ map (k^) [0..max]
 
 ------------------------------------------------------------------------------
 -- Ex 7: implement a functional while loop. While should be a function
@@ -140,7 +140,7 @@ powers k max = takeWhile (\x -> x <= max) $ map (k^) [0..max]
 --     ==> Avvt
 
 while :: (a->Bool) -> (a->a) -> a -> a
-while check update value = if (check value) then while check update (update value) else value
+while check update value = if check value then while check update (update value) else value
 
 ------------------------------------------------------------------------------
 -- Ex 8: another version of a while loop. This time, the check
@@ -177,7 +177,7 @@ step k x = if x<k then Right (2*x) else Left x
 -- Hint! This is a great use for list comprehensions
 
 joinToLength :: Int -> [String] -> [String]
-joinToLength = todo
+joinToLength n xs = [ doubled | x <- xs, myList <- xs, let doubled = x ++ myList, length doubled == n]
 
 ------------------------------------------------------------------------------
 -- Ex 10: implement the operator +|+ that returns a list with the first
@@ -191,7 +191,11 @@ joinToLength = todo
 --   [] +|+ [True]        ==> [True]
 --   [] +|+ []            ==> []
 
-
+(+|+) :: [a] -> [a] -> [a]
+(+|+) [] [] = []
+(+|+) [] ys = [head ys]
+(+|+) xs [] = [head xs]
+(+|+) xs ys = head xs : [head ys]
 ------------------------------------------------------------------------------
 -- Ex 11: remember the lectureParticipants example from Lecture 2? We
 -- used a value of type [Either String Int] to store some measurements
@@ -207,7 +211,9 @@ joinToLength = todo
 --   sumRights [Left "bad!", Left "missing"]         ==>  0
 
 sumRights :: [Either a Int] -> Int
-sumRights = todo
+sumRights [] = 0
+sumRights (Left a : xs) = sumRights xs
+sumRights (Right a: xs) = a + sumRights xs
 
 ------------------------------------------------------------------------------
 -- Ex 12: recall the binary function composition operation
@@ -223,7 +229,9 @@ sumRights = todo
 --   multiCompose [(3*), (2^), (+1)] 0 ==> 6
 --   multiCompose [(+1), (2^), (3*)] 0 ==> 2
 
-multiCompose fs = todo
+multiCompose :: [a -> a] -> a -> a
+multiCompose [] a = a
+multiCompose (fn:fs) a = fn $ multiCompose fs a
 
 ------------------------------------------------------------------------------
 -- Ex 13: let's consider another way to compose multiple functions. Given
@@ -244,7 +252,8 @@ multiCompose fs = todo
 --   multiApp id [head, (!!2), last] "axbxc" ==> ['a','b','c'] i.e. "abc"
 --   multiApp sum [head, (!!2), last] [1,9,2,9,3] ==> 6
 
-multiApp = todo
+multiApp :: ([b] -> t) -> [a -> b] -> a -> t
+multiApp f gs a = f $ map ($a) gs
 
 ------------------------------------------------------------------------------
 -- Ex 14: in this exercise you get to implement an interpreter for a
@@ -279,4 +288,17 @@ multiApp = todo
 -- function, the surprise won't work.
 
 interpreter :: [String] -> [String]
-interpreter commands = todo
+interpreter [] = []
+interpreter commands = reverse $ interpreter' commands 0 0 []
+
+interpreter' :: [String] -> Int -> Int -> [String] -> [String]
+interpreter' [] x y res = res
+interpreter' (cmd: commands) x y res 
+    | cmd == "printX" = interpreter' commands x y (show x:res)
+    | cmd == "printY" = interpreter' commands x y (show y:res)
+    | cmd == "up" = interpreter' commands x (y+1) res
+    | cmd == "down" = interpreter' commands x (y-1) res
+    | cmd == "left" = interpreter' commands (x-1) y res
+    | cmd == "right" = interpreter' commands (x+1) y res
+    | otherwise = interpreter' commands x y res
+                                                
