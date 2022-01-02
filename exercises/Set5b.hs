@@ -3,6 +3,7 @@
 module Set5b where
 
 import Mooc.Todo
+import GHC.Base ((<|>))
 
 -- The next exercises use the binary tree type defined like this:
 
@@ -68,7 +69,7 @@ allValues condition (Node a b c)
 
 mapTree :: (a -> b) -> Tree a -> Tree b
 mapTree _ Empty = Empty
-mapTree f (Node a b c) = Node (f a) (mapTree f b) (mapTree f c) 
+mapTree f (Node a b c) = Node (f a) (mapTree f b) (mapTree f c)
 
 ------------------------------------------------------------------------------
 -- Ex 6: given a value and a tree, build a new tree that is the same,
@@ -115,7 +116,7 @@ cull :: Eq a => a -> Tree a -> Tree a
 cull _ Empty = Empty
 cull val (Node a b c)
   | val == a = Empty
-  | otherwise = Node a (cull val b) (cull val c) 
+  | otherwise = Node a (cull val b) (cull val c)
 
 ------------------------------------------------------------------------------
 -- Ex 7: check if a tree is ordered. A tree is ordered if:
@@ -181,9 +182,9 @@ data Step = StepL | StepR
 walk :: [Step] -> Tree a -> Maybe a
 walk _ Empty = Nothing
 walk [] (Node a _ _) = Just a
-walk (step:steps) (Node a l r) = case step of 
+walk (step:steps) (Node a l r) = case step of
   StepL -> walk steps l
-  StepR -> walk steps r 
+  StepR -> walk steps r
 
 ------------------------------------------------------------------------------
 -- Ex 9: given a tree, a path and a value, set the value at the end of
@@ -227,4 +228,6 @@ set (step:path) val (Node a l r) = case walk (step:path) (Node a l r) of
 
 search :: Eq a => a -> Tree a -> Maybe [Step]
 search _ Empty = Nothing
-search v (Node a l r) = todo
+search v (Node a l r)
+  | v  == a = Just []
+  | otherwise = fmap (StepL:) (search v l) <|> fmap (StepR:) (search v r)
