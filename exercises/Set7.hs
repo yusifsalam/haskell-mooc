@@ -142,7 +142,14 @@ reverseNonEmpty (a :| as )= last as :| (tail (reverse as) ++ [a])
 -- velocity (Distance 50 <> Distance 10) (Time 1 <> Time 2)
 --    ==> Velocity 20
 
+instance Semigroup Distance where
+  (Distance x) <> (Distance y) = Distance (x + y)
 
+instance Semigroup Time where
+   (Time a) <> (Time b) = Time (a + b)
+
+instance Semigroup Velocity where
+  (Velocity a) <> (Velocity b) = Velocity (a+b)
 ------------------------------------------------------------------------------
 -- Ex 7: implement a Monoid instance for the Set type from exercise 2.
 -- The (<>) operation should be the union of sets.
@@ -150,6 +157,12 @@ reverseNonEmpty (a :| as )= last as :| (tail (reverse as) ++ [a])
 -- What's the right definition for mempty?
 --
 -- What are the class constraints for the instances?
+
+instance (Ord a,Eq a) => Semigroup (Set a) where
+  (Set x) <> (Set y) = Set (sort (nub (x ++ y)))
+
+instance (Ord a, Eq a) => Monoid (Set a) where
+  mempty = Set []
 
 
 ------------------------------------------------------------------------------
@@ -173,28 +186,41 @@ reverseNonEmpty (a :| as )= last as :| (tail (reverse as) ++ [a])
 
 data Operation1 = Add1 Int Int
                 | Subtract1 Int Int
+                | Multiply1 Int Int
   deriving Show
 
 compute1 :: Operation1 -> Int
 compute1 (Add1 i j) = i+j
 compute1 (Subtract1 i j) = i-j
+compute1 (Multiply1 i j) = i*j
 
 show1 :: Operation1 -> String
-show1 = todo
+show1 (Add1 a b) = show a ++ "+" ++ show b
+show1 (Subtract1 a b) = show a ++ "-" ++ show b
+show1 (Multiply1 a b) = show a ++ "*" ++ show b
 
 data Add2 = Add2 Int Int
   deriving Show
 data Subtract2 = Subtract2 Int Int
   deriving Show
+data Multiply2 = Multiply2 Int Int
+  deriving Show
 
 class Operation2 op where
   compute2 :: op -> Int
+  show2:: op -> String
 
 instance Operation2 Add2 where
   compute2 (Add2 i j) = i+j
+  show2 (Add2 a b) = show a ++ "+" ++ show b
 
 instance Operation2 Subtract2 where
   compute2 (Subtract2 i j) = i-j
+  show2 (Subtract2 a b) = show a ++ "-" ++ show b
+
+instance Operation2 Multiply2 where
+  compute2 (Multiply2 i j) = i*j
+  show2 (Multiply2 a b) = show a ++ "*" ++ show b
 
 
 ------------------------------------------------------------------------------
@@ -224,7 +250,12 @@ data PasswordRequirement =
   deriving Show
 
 passwordAllowed :: String -> PasswordRequirement -> Bool
-passwordAllowed = todo
+passwordAllowed s (MinimumLength n) = length s >= n
+passwordAllowed [] (ContainsSome check) = False
+passwordAllowed (c:cs) (ContainsSome check) = elem c check || passwordAllowed cs (ContainsSome check)
+passwordAllowed c (DoesNotContain check) = not (passwordAllowed c (ContainsSome check))
+passwordAllowed c (And r1 r2) = passwordAllowed c r1 && passwordAllowed c r2
+passwordAllowed c (Or r1 r2) = passwordAllowed c r1 || passwordAllowed c r2
 
 ------------------------------------------------------------------------------
 -- Ex 10: a DSL for simple arithmetic expressions with addition and
@@ -246,17 +277,23 @@ passwordAllowed = todo
 --     ==> "(3*(1+1))"
 --
 
-data Arithmetic = Todo
+data Arithmetic = Addition Arithmetic Arithmetic | Multiplication Arithmetic Arithmetic | Value Integer
   deriving Show
 
 literal :: Integer -> Arithmetic
-literal = todo
+literal n = Value n
 
 operation :: String -> Arithmetic -> Arithmetic -> Arithmetic
-operation = todo
+operation "+" a b = Addition a b
+operation "*" a b = Multiplication a b
+operation _ a b = a
 
 evaluate :: Arithmetic -> Integer
-evaluate = todo
+evaluate (Value n) = n
+evaluate (Addition a b) = evaluate a + evaluate b
+evaluate (Multiplication a b) = evaluate a * evaluate b
 
 render :: Arithmetic -> String
-render = todo
+render (Value n) = show n
+render (Addition a b) = "(" ++ render a ++ "+" ++ render b ++ ")"
+render (Multiplication a b) = "(" ++  render a ++ "*" ++ render b ++ ")"
