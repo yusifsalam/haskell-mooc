@@ -332,7 +332,8 @@ stripes a b = Picture f
 --       ["000000","000000","000000","000000","000000"]]
 
 paint :: Picture -> Shape -> Picture -> Picture
-paint pat shape base = todo
+paint (Picture pattern) (Shape s) (Picture base) = Picture f
+  where f c = if s c then pattern c else base c 
 ------------------------------------------------------------------------------
 
 -- Here's a patterned version of the snowman example. See it by running:
@@ -395,19 +396,28 @@ xy = Picture f
 data Fill = Fill Color
 
 instance Transform Fill where
-  apply = todo
+  apply (Fill color) _ = Picture f
+    where f _ = color
 
 data Zoom = Zoom Int
   deriving Show
 
 instance Transform Zoom where
-  apply = todo
+  apply (Zoom x) p = zoom x p 
 
 data Flip = FlipX | FlipY | FlipXY
   deriving Show
 
+flipCoordX :: Coord -> Coord
+flipCoordX (Coord x y) = (Coord (-x) y)
+
+flipCoordY :: Coord -> Coord
+flipCoordY (Coord x y) = (Coord x (-y))
+
 instance Transform Flip where
-  apply = todo
+  apply FlipXY p= flipXY p
+  apply FlipX (Picture f) = Picture (f . flipCoordX)
+  apply FlipY (Picture f) = Picture (f . flipCoordY) 
 ------------------------------------------------------------------------------
 
 ------------------------------------------------------------------------------
@@ -422,8 +432,8 @@ instance Transform Flip where
 data Chain a b = Chain a b
   deriving Show
 
-instance Transform (Chain a b) where
-  apply = todo
+instance (Transform a, Transform b) => Transform (Chain a b) where
+  apply (Chain a b) p = apply a (apply b p)
 ------------------------------------------------------------------------------
 
 -- Now we can redefine largeVerticalStripes using the above Transforms.
@@ -457,11 +467,22 @@ checkered = flipBlend largeVerticalStripes2
 --        ["000000","000000","333333","000000","000000"],
 --        ["000000","000000","000000","000000","000000"]]
 
+
+-- [ ["000000","000000","000000","000000","000000"],
+--   ["000000","000000","3f3f3f","000000","000000"],
+--   ["000000","3f3f3f","000000","3f3f3f","000000"],
+--   ["000000","000000","3f3f3f","000000","000000"],
+--   ["000000","000000","000000","000000","000000"]]
+
 data Blur = Blur
   deriving Show
 
 instance Transform Blur where
-  apply = todo
+  apply Blur (Picture p) = Picture f
+    where f (Coord x y) = Color myRed myGreen myBlue 
+            where myRed = div (getRed (p (Coord x y)) + getRed (p (Coord (x+1) y)) + getRed (p (Coord (x-1) y)) + getRed (p (Coord x (y-1))) + getRed (p (Coord x (y+1)))) 5
+                  myGreen = div (getGreen (p (Coord x y)) + getGreen (p (Coord (x+1) y)) + getGreen (p (Coord (x-1) y)) + getGreen (p (Coord x (y-1))) + getGreen (p (Coord x (y+1)))) 5 
+                  myBlue = div (getBlue (p (Coord x y)) + getBlue (p (Coord (x+1) y)) + getBlue (p (Coord (x-1) y)) + getBlue (p (Coord x (y-1))) + getBlue (p (Coord x (y+1)))) 5 
 ------------------------------------------------------------------------------
 
 ------------------------------------------------------------------------------
@@ -479,7 +500,8 @@ data BlurMany = BlurMany Int
   deriving Show
 
 instance Transform BlurMany where
-  apply = todo
+  apply (BlurMany 0) p = p
+  apply (BlurMany n) p = apply (BlurMany (n-1)) (apply Blur p)
 ------------------------------------------------------------------------------
 
 -- Here's a blurred version of our original snowman. See it by running
