@@ -245,7 +245,7 @@ printVal2 n c q
             | elem c q = "Q"
             | danger c q = "#"
             | otherwise = "."
-            
+
 
 --------------------------------------------------------------------------------
 -- Ex 6: Now that we can check if a piece can be safely placed into a square in
@@ -290,7 +290,12 @@ printVal2 n c q
 --     Q#######
 
 fixFirst :: Size -> Stack -> Maybe Stack
-fixFirst n s = todo
+fixFirst _ [] = Nothing
+fixFirst _ [x] = Nothing
+fixFirst n (q:s)
+    | not (danger q s) && snd q <= n = Just (q:s)
+    | danger q s && snd q < n = fixFirst n ((fst q, snd q + 1):s)
+    | otherwise = Nothing
 
 --------------------------------------------------------------------------------
 -- Ex 7: We need two helper functions for stack management.
@@ -312,10 +317,14 @@ fixFirst n s = todo
 -- Hint: Remember nextRow and nextCol? Use them!
 
 continue :: Stack -> Stack
-continue s = todo
+continue [] = []
+continue (s:ss) = nextRow s : s : ss 
 
 backtrack :: Stack -> Stack
-backtrack s = todo
+backtrack [] = []
+backtrack [a] = []
+backtrack [a,b] = [nextCol b]
+backtrack (s:a:ss) = nextCol a : ss
 
 --------------------------------------------------------------------------------
 -- Ex 8: Let's take a step. Our algorithm solves the problem (in a
@@ -384,7 +393,9 @@ backtrack s = todo
 --     step 8 [(6,1),(5,4),(4,2),(3,5),(2,3),(1,1)] ==> [(5,5),(4,2),(3,5),(2,3),(1,1)]
 
 step :: Size -> Stack -> Stack
-step = todo
+step n [q] = continue [q]
+step n q = case fixFirst n q of Nothing -> backtrack q
+                                Just s -> continue s
 
 --------------------------------------------------------------------------------
 -- Ex 9: Let's solve our puzzle! The function finish takes a partial
@@ -399,7 +410,9 @@ step = todo
 -- solve the n queens problem.
 
 finish :: Size -> Stack -> Stack
-finish = todo
+finish n s
+    | length (step n s) == (n+1) = tail $ step n s
+    | otherwise = finish n (step n s) 
 
 solve :: Size -> Stack
 solve n = finish n [(1,1)]
