@@ -47,10 +47,10 @@ type Col   = Int
 type Coord = (Row, Col)
 
 nextRow :: Coord -> Coord
-nextRow (i,j) = todo
+nextRow (i,j) = (i+1, 1)
 
 nextCol :: Coord -> Coord
-nextCol (i,j) = todo
+nextCol (i,j) = (i, j+1)
 
 --------------------------------------------------------------------------------
 -- Ex 2: Implement the function prettyPrint that, given the size of
@@ -100,7 +100,16 @@ nextCol (i,j) = todo
 -- takes O(n^3) time. Just ignore the previous sentence, if you're not familiar
 -- with the O-notation.)
 prettyPrint :: Size -> [Coord] -> String
-prettyPrint = todo
+prettyPrint 0 _ = ""
+prettyPrint n q = printVal n (1,1) q
+
+printVal:: Int -> Coord -> [Coord] -> String
+printVal n c q
+    | n == fst c  && n == snd c = smartPrint c q ++ "\n" -- last element on last row
+    | n /= fst c && n == snd c = smartPrint c q ++ "\n" ++ printVal n (nextRow c) q -- last element on first n-1 rows
+    | n /= snd c = smartPrint c q ++ printVal n (nextCol c) q -- all other elements
+    | otherwise = ""
+    where smartPrint c q = if elem c q then "Q" else "."
 
 --------------------------------------------------------------------------------
 -- Ex 3: The task in this exercise is to define the relations sameRow, sameCol,
@@ -124,16 +133,16 @@ prettyPrint = todo
 --   sameAntidiag (500,5) (5,500) ==> True
 
 sameRow :: Coord -> Coord -> Bool
-sameRow (i,j) (k,l) = todo
+sameRow (i,j) (k,l) = i == k
 
 sameCol :: Coord -> Coord -> Bool
-sameCol (i,j) (k,l) = todo
+sameCol (i,j) (k,l) = j == l
 
 sameDiag :: Coord -> Coord -> Bool
-sameDiag (i,j) (k,l) = todo
+sameDiag (i,j) (k,l) = i - k == j - l
 
 sameAntidiag :: Coord -> Coord -> Bool
-sameAntidiag (i,j) (k,l) = todo
+sameAntidiag (i,j) (k,l) = i+j == k+l
 
 --------------------------------------------------------------------------------
 -- Ex 4: In chess, a queen may capture another piece in the same row, column,
@@ -189,7 +198,7 @@ type Candidate = Coord
 type Stack     = [Coord]
 
 danger :: Candidate -> Stack -> Bool
-danger = todo
+danger c = any (\x -> sameRow c x || sameCol c x || sameDiag c x || sameAntidiag c x )
 
 --------------------------------------------------------------------------------
 -- Ex 5: In this exercise, the task is to write a modified version of
@@ -224,7 +233,19 @@ danger = todo
 -- solution to this version. Any working solution is okay in this exercise.)
 
 prettyPrint2 :: Size -> Stack -> String
-prettyPrint2 = todo
+prettyPrint2 n = printVal2 n (1,1)
+
+printVal2:: Int -> Coord -> [Coord] -> String
+printVal2 n c q
+    | n == fst c  && n == snd c = smartPrint c q ++ "\n" -- last element on last row
+    | n /= fst c && n == snd c = smartPrint c q ++ "\n" ++ printVal2 n (nextRow c) q -- last element on first n-1 rows
+    | n /= snd c = smartPrint c q ++ printVal2 n (nextCol c) q -- all other elements
+    | otherwise = ""
+    where smartPrint c q
+            | elem c q = "Q"
+            | danger c q = "#"
+            | otherwise = "."
+            
 
 --------------------------------------------------------------------------------
 -- Ex 6: Now that we can check if a piece can be safely placed into a square in
