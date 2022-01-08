@@ -78,8 +78,7 @@ deal players cards = zip cards (cycle players)
 
 averages :: [Double] -> [Double]
 averages [] = []
-averages [x] = [x]
-averages (x:y:xs) = todo
+averages xs = zipWith (/) (tail $ scanl (+) 0 xs) [1..]
 
 ------------------------------------------------------------------------------
 -- Ex 5: Given two lists, xs and ys, and an element z, generate an
