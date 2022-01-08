@@ -120,7 +120,9 @@ compose op1 op2 c = do
 --   ["module Set11b where","","import Control.Monad"]
 
 hFetchLines :: Handle -> IO [String]
-hFetchLines = todo
+hFetchLines h = do
+    content <- hGetContents h
+    return $ lines content
 
 ------------------------------------------------------------------------------
 -- Ex 6: Given a Handle and a list of line indexes, produce the lines
@@ -133,7 +135,9 @@ hFetchLines = todo
 -- handle.
 
 hSelectLines :: Handle -> [Int] -> IO [String]
-hSelectLines h nums = todo
+hSelectLines h nums = do
+    allLines <- hFetchLines h
+    return $ map fst $ filter (\x -> [snd x] `isInfixOf` nums) (zip allLines [1..])
 
 ------------------------------------------------------------------------------
 -- Ex 7: In this exercise we see how a program can be split into a
@@ -173,5 +177,20 @@ counter ("inc",n)   = (True,"done",n+1)
 counter ("print",n) = (True,show n,n)
 counter ("quit",n)  = (False,"bye bye",n)
 
+getFirst :: (a, b, c) -> a
+getFirst (a,_,_) = a
+
+getSecond :: (a, b, c) -> b
+getSecond (_,a,_) = a
+
+getThird :: (a, b, c) -> c
+getThird (_,_,a) = a
+
 interact' :: ((String,st) -> (Bool,String,st)) -> st -> IO st
-interact' f state = todo
+interact' f state = do
+    i <- getLine
+    putStrLn $ getSecond (f (i, state))
+    if getFirst (f (i, state)) then (do
+            interact' f (getThird (f (i, state)))) else return $ getThird (f (i, state))
+
+
