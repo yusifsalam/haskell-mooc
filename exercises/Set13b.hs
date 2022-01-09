@@ -177,7 +177,10 @@ path maze place1 place2 = do
 -- PS. The tests don't care about the order of results.
 
 findSum2 :: [Int] -> [Int] -> [(Int,Int,Int)]
-findSum2 ks ns = todo
+findSum2 ks ns = do
+  a <- ks
+  b <- ks
+  if (a+b `elem` ns) then [(a,b,a+b)] else []
 
 ------------------------------------------------------------------------------
 -- Ex 5: compute all possible sums of elements from the given
@@ -198,7 +201,8 @@ findSum2 ks ns = todo
 --     ==> [7,3,5,1,6,2,4,0]
 
 allSums :: [Int] -> [Int]
-allSums xs = todo
+allSums xs = map sum $ filterM (const [True, False]) xs
+
 
 ------------------------------------------------------------------------------
 -- Ex 6: the standard library defines the function
