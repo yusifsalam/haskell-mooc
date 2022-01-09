@@ -292,7 +292,7 @@ count x = do
   prev <- get
   if prev == [] then put [(x,1)] -- empty starting list
   else if all (\a -> fst a /= x) prev then put (prev++[(x,1)]) -- new element
-  else put (map (\a -> if fst a == x then (x, snd a +1) else a) prev)
+  else put (map (\a -> if fst a == x then (x, snd a +1) else a) prev) -- increment
 
 ------------------------------------------------------------------------------
 -- Ex 10: Implement the operation occurrences, which
@@ -314,4 +314,9 @@ count x = do
 --    ==> (4,[(2,1),(3,1),(4,1),(7,1)])
 
 occurrences :: (Eq a) => [a] -> State [(a,Int)] Int
-occurrences xs = todo
+occurrences [] = return 0
+occurrences (x:xs) = do
+  current <- count x 
+  rest <- occurrences xs
+  s <- get
+  return $ length s
