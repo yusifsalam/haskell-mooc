@@ -45,19 +45,19 @@ readNames s =
 -- (NB! There are obviously other corner cases like the inputs " " and
 -- "a b c", but you don't need to worry about those here)
 split :: String -> Maybe (String,String)
-split = todo
+split s = if length (words s) < 2 then Nothing else Just (head (words s), words s !! 1 )
 
 -- checkNumber should take a pair of two strings and return them
 -- unchanged if they don't contain numbers. Otherwise Nothing is
 -- returned.
 checkNumber :: (String, String) -> Maybe (String, String)
-checkNumber = todo
+checkNumber (a,b) = if any isDigit a || any isDigit b then Nothing else Just (a,b)
 
 -- checkCapitals should take a pair of two strings and return them
 -- unchanged if both start with a capital letter. Otherwise Nothing is
 -- returned.
 checkCapitals :: (String, String) -> Maybe (String, String)
-checkCapitals (for,sur) = todo
+checkCapitals (a,b) = if isUpper (head a) && isUpper (head b) then Just (a,b) else Nothing
 
 ------------------------------------------------------------------------------
 -- Ex 2: Given a list of players and their scores (as [(String,Int)]),
@@ -84,7 +84,10 @@ checkCapitals (for,sur) = todo
 --     ==> Just "a"
 
 winner :: [(String,Int)] -> String -> String -> Maybe String
-winner scores player1 player2 = todo
+winner scores player1 player2 = do
+  score1 <- lookup player1 scores
+  score2 <- lookup player2 scores
+  if score1 >= score2 then return player1 else return player2
 
 ------------------------------------------------------------------------------
 -- Ex 3: given a list of indices and a list of values, return the sum
@@ -102,8 +105,24 @@ winner scores player1 player2 = todo
 --    Nothing
 
 selectSum :: Num a => [a] -> [Int] -> Maybe a
-selectSum xs is = todo
+selectSum _ [] = return 0
+selectSum xs (i:is) = do
+  current <- safeIndex xs i
+  remaining <- selectSum xs is
+  return (current + remaining)
 
+safeHead [] = Nothing
+safeHead (x:xs) = Just x
+
+safeTail [] = Nothing
+safeTail (x:xs) = Just xs
+
+
+safeIndex :: [a] -> Int -> Maybe a
+safeIndex xs 0 = safeHead xs
+safeIndex xs n = do
+  rest <- safeTail xs
+  safeIndex rest (n-1)
 ------------------------------------------------------------------------------
 -- Ex 4: Here is the Logger monad from the course material. Implement
 -- the operation countAndLog which produces the number of elements
@@ -136,7 +155,17 @@ instance Applicative Logger where
   (<*>) = ap
 
 countAndLog :: Show a => (a -> Bool) -> [a] -> Logger Int
-countAndLog = todo
+countAndLog f [] = return 0
+countAndLog f (x:xs)
+  | f x = do
+        msg (show x)
+        xs' <- countAndLog f xs
+        return (1+xs')
+  | otherwise = do
+        countAndLog f xs
+
+
+annotate s x = msg s >> return x
 
 ------------------------------------------------------------------------------
 -- Ex 5: You can find the Bank and BankOp code from the course
@@ -153,7 +182,8 @@ exampleBank :: Bank
 exampleBank = (Bank (Map.fromList [("harry",10),("cedric",7),("ginny",1)]))
 
 balance :: String -> BankOp Int
-balance accountName = todo
+balance accountName = BankOp helper
+  where helper (Bank bank) = (Map.findWithDefault 0 accountName bank, Bank bank) 
 
 ------------------------------------------------------------------------------
 -- Ex 6: Using the operations balance, withdrawOp and depositOp, and
