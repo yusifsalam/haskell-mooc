@@ -17,7 +17,7 @@ import Mooc.Todo
 --   incrementAll (Just 3.0)  ==>  Just 4.0
 
 incrementAll :: (Functor f, Num n) => f n -> f n
-incrementAll x = todo
+incrementAll = fmap (+1)
 
 ------------------------------------------------------------------------------
 -- Ex 2: Sometimes one wants to fmap multiple levels deep. Implement
@@ -38,10 +38,10 @@ incrementAll x = todo
 --       ==> Just [Just True,Nothing]
 
 fmap2 :: (Functor f, Functor g) => (a -> b) -> f (g a) -> f (g b)
-fmap2 = todo
+fmap2 = fmap . fmap
 
 fmap3 :: (Functor f, Functor g, Functor h) => (a -> b) -> f (g (h a)) -> f (g (h b))
-fmap3 = todo
+fmap3 = fmap . fmap . fmap
 
 ------------------------------------------------------------------------------
 -- Ex 3: below you'll find a type Result that works a bit like Maybe,
@@ -54,8 +54,9 @@ data Result a = MkResult a | NoResult | Failure String
   deriving Show
 
 instance Functor Result where
-  fmap f result = todo
-
+  fmap f (MkResult a) = MkResult (f a)
+  fmap f NoResult = NoResult
+  fmap f (Failure s) = Failure s
 ------------------------------------------------------------------------------
 -- Ex 4: Here's a reimplementation of the Haskell list type. You might
 -- remember it from Set6. Implement the instance Functor List.
@@ -68,6 +69,8 @@ data List a = Empty | LNode a (List a)
   deriving Show
 
 instance Functor List where
+  fmap f Empty = Empty
+  fmap f (LNode a b) = LNode (f a) (fmap f b)
 
 ------------------------------------------------------------------------------
 -- Ex 5: Here's another list type. This type every node contains two
@@ -82,6 +85,8 @@ data TwoList a = TwoEmpty | TwoNode a a (TwoList a)
   deriving Show
 
 instance Functor TwoList where
+  fmap f TwoEmpty = TwoEmpty
+  fmap f (TwoNode a b c) = TwoNode (f a) (f b) (fmap f c)
 
 ------------------------------------------------------------------------------
 -- Ex 6: Count all occurrences of a given element inside a Foldable.
@@ -94,7 +99,7 @@ instance Functor TwoList where
 --   count 'c' (Just 'c') ==> 1
 
 count :: (Eq a, Foldable f) => a -> f a -> Int
-count = todo
+count a f = length $ filter (==a) (toList f)
 
 ------------------------------------------------------------------------------
 -- Ex 7: Return all elements that are in two Foldables, as a list.
@@ -105,7 +110,7 @@ count = todo
 --   inBoth Nothing [3]    ==> []
 
 inBoth :: (Foldable f, Foldable g, Eq a) => f a -> g a -> [a]
-inBoth = todo
+inBoth a b = toList a `intersect` toList b
 
 ------------------------------------------------------------------------------
 -- Ex 8: Implement the instance Foldable List.
@@ -118,7 +123,8 @@ inBoth = todo
 --   length (LNode 1 (LNode 2 (LNode 3 Empty))) ==> 3
 
 instance Foldable List where
-  foldr = todo
+  foldr _ initial Empty = initial
+  foldr f initial (LNode a b) = f a (foldr f initial b)
 
 ------------------------------------------------------------------------------
 -- Ex 9: Implement the instance Foldable TwoList.
@@ -128,7 +134,8 @@ instance Foldable List where
 --   length (TwoNode 0 1 (TwoNode 2 3 TwoEmpty)) ==> 4
 
 instance Foldable TwoList where
-  foldr = todo
+  foldr _ initial TwoEmpty = initial
+  foldr f initial (TwoNode a b c) = f a (f b (foldr f initial c))
 
 ------------------------------------------------------------------------------
 -- Ex 10: (Tricky!) Fun a is a type that wraps a function Int -> a.
@@ -143,6 +150,7 @@ runFun :: Fun a -> Int -> a
 runFun (Fun f) x = f x
 
 instance Functor Fun where
+  fmap f (Fun g) = Fun (f . g)
 
 ------------------------------------------------------------------------------
 -- Ex 11: (Tricky!) You'll find the binary tree type from Set 5b
@@ -199,10 +207,12 @@ data Tree a = Leaf | Node a (Tree a) (Tree a)
   deriving Show
 
 instance Functor Tree where
-  fmap = todo
+  fmap f Leaf = Leaf
+  fmap f (Node a b c) = Node (f a) (fmap f b) (fmap f c)
 
 sumTree :: Monoid m => Tree m -> m
-sumTree = todo
+sumTree Leaf = mconcat []
+sumTree (Node a b c) = sumTree b <> mconcat [a] <> sumTree c 
 
 instance Foldable Tree where
   foldMap f t = sumTree (fmap f t)
