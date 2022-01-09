@@ -183,7 +183,7 @@ exampleBank = (Bank (Map.fromList [("harry",10),("cedric",7),("ginny",1)]))
 
 balance :: String -> BankOp Int
 balance accountName = BankOp helper
-  where helper (Bank bank) = (Map.findWithDefault 0 accountName bank, Bank bank) 
+  where helper (Bank bank) = (Map.findWithDefault 0 accountName bank, Bank bank)
 
 ------------------------------------------------------------------------------
 -- Ex 6: Using the operations balance, withdrawOp and depositOp, and
@@ -201,7 +201,12 @@ balance accountName = BankOp helper
 --     ==> ((),Bank (fromList [("cedric",7),("ginny",1),("harry",10)]))
 
 rob :: String -> String -> BankOp ()
-rob from to = todo
+rob from to =
+  balance from
+  +>
+  withdrawOp from
+  +>
+  depositOp to
 
 ------------------------------------------------------------------------------
 -- Ex 7: using the State monad, write the operation `update` that first
@@ -213,7 +218,11 @@ rob from to = todo
 --    ==> ((),7)
 
 update :: State Int ()
-update = todo
+update = do
+  value <- get
+  put (value*2)
+  value2 <- get
+  put (value2+1)
 
 ------------------------------------------------------------------------------
 -- Ex 8: Checking that parentheses are balanced with the State monad.
@@ -241,7 +250,14 @@ update = todo
 --   parensMatch "(()))("      ==> False
 
 paren :: Char -> State Int ()
-paren = todo
+paren s
+  | s == '(' = do
+      value <- get
+      if value == -1 then return () else put (value+1)
+  | s == ')' = do
+      value <- get
+      if value == -1 then return () else put (value-1)
+  | otherwise = return ()
 
 parensMatch :: String -> Bool
 parensMatch s = count == 0
@@ -272,7 +288,11 @@ parensMatch s = count == 0
 -- PS. The order of the list of pairs doesn't matter
 
 count :: Eq a => a -> State [(a,Int)] ()
-count x = todo
+count x = do
+  prev <- get
+  if prev == [] then put [(x,1)] -- empty starting list
+  else if all (\a -> fst a /= x) prev then put (prev++[(x,1)]) -- new element
+  else put (map (\a -> if fst a == x then (x, snd a +1) else a) prev)
 
 ------------------------------------------------------------------------------
 -- Ex 10: Implement the operation occurrences, which
