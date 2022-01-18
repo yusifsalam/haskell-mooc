@@ -28,7 +28,7 @@ import qualified Data.ByteString.Lazy as BL
 --  greetText (T.pack "Benedict Cumberbatch") ==> "Hello, Benedict Cumber...!"
 
 greetText :: T.Text -> T.Text
-greetText = todo
+greetText text = if T.length text > 15 then T.pack "Hello, " <> T.take 15 text <> T.pack "...!" else T.pack "Hello, " <> text <> T.pack "!"
 
 ------------------------------------------------------------------------------
 -- Ex 2: Capitalize every second word of a Text.
@@ -40,7 +40,9 @@ greetText = todo
 --     ==> "WORD"
 
 shout :: T.Text -> T.Text
-shout = todo
+shout text = T.unwords myWords where
+    myWords = map (\a -> if even (fst a) then snd a else T.toUpper (snd a)) words
+    words = zip [1..] (T.words text)
 
 ------------------------------------------------------------------------------
 -- Ex 3: Find the longest sequence of a single character repeating in
@@ -51,7 +53,7 @@ shout = todo
 --   longestRepeat (T.pack "aabbbbccc") ==> 4
 
 longestRepeat :: T.Text -> Int
-longestRepeat = todo
+longestRepeat text = if text == T.empty then 0 else foldr1 (\x y -> if x >= y then x else y) (map T.length (T.group text))
 
 ------------------------------------------------------------------------------
 -- Ex 4: Given a lazy (potentially infinite) Text, extract the first n
@@ -64,7 +66,7 @@ longestRepeat = todo
 --   takeStrict 15 (TL.pack (cycle "asdf"))  ==>  "asdfasdfasdfasd"
 
 takeStrict :: Int64 -> TL.Text -> T.Text
-takeStrict = todo
+takeStrict n text = TL.toStrict $ TL.take n text 
 
 ------------------------------------------------------------------------------
 -- Ex 5: Find the difference between the largest and smallest byte
