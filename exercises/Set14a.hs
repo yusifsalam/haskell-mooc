@@ -66,7 +66,7 @@ longestRepeat text = if text == T.empty then 0 else foldr1 (\x y -> if x >= y th
 --   takeStrict 15 (TL.pack (cycle "asdf"))  ==>  "asdfasdfasdfasd"
 
 takeStrict :: Int64 -> TL.Text -> T.Text
-takeStrict n text = TL.toStrict $ TL.take n text 
+takeStrict n text = TL.toStrict $ TL.take n text
 
 ------------------------------------------------------------------------------
 -- Ex 5: Find the difference between the largest and smallest byte
@@ -78,7 +78,10 @@ takeStrict n text = TL.toStrict $ TL.take n text
 --   byteRange (B.pack [3]) ==> 0
 
 byteRange :: B.ByteString -> Word8
-byteRange = todo
+byteRange b = if B.length b < 2 then 0 else myMax - myMin where
+    myMax = foldr1 (\a b -> if a >= b then a else b) arr
+    myMin = foldr1 (\a b -> if a <= b then a else b) arr
+    arr = B.unpack b
 
 ------------------------------------------------------------------------------
 -- Ex 6: Compute the XOR checksum of a ByteString. The XOR checksum of
@@ -99,7 +102,7 @@ byteRange = todo
 --   xorChecksum (B.pack []) ==> 0
 
 xorChecksum :: B.ByteString -> Word8
-xorChecksum = todo
+xorChecksum b = if b == B.empty then 0 else foldr1 xor (B.unpack b)
 
 ------------------------------------------------------------------------------
 -- Ex 7: Given a ByteString, compute how many UTF-8 characters it
@@ -116,7 +119,8 @@ xorChecksum = todo
 --   countUtf8Chars (B.drop 1 (encodeUtf8 (T.pack "åäö"))) ==> Nothing
 
 countUtf8Chars :: B.ByteString -> Maybe Int
-countUtf8Chars = todo
+countUtf8Chars b = case decodeUtf8' b of Left _ -> Nothing
+                                         Right x -> Just $ T.length x
 
 ------------------------------------------------------------------------------
 -- Ex 8: Given a (nonempty) strict ByteString b, generate an infinite
@@ -128,5 +132,5 @@ countUtf8Chars = todo
 --     ==> [0,1,2,2,1,0,0,1,2,2,1,0,0,1,2,2,1,0,0,1]
 
 pingpong :: B.ByteString -> BL.ByteString
-pingpong = todo
+pingpong b = BL.cycle (a <> BL.reverse a) where a = BL.fromStrict b
 
