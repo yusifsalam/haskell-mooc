@@ -112,7 +112,11 @@ balanceQuery :: Query
 balanceQuery = Query (T.pack "SELECT amount FROM events WHERE account = ?;")
 
 balance :: Connection -> T.Text -> IO Int
-balance = todo
+balance db account = do
+  let accountString = T.unpack account
+  res <- query db balanceQuery [accountString] :: IO [[Int]]
+  return $ sum (map head res)
+
 
 ------------------------------------------------------------------------------
 -- Ex 3: Now that we have the database part covered, let's think about
