@@ -148,18 +148,20 @@ balance db account = do
 --   parseCommand [T.pack "deposit", T.pack "madoff", T.pack "123456"]
 --     ==> Just (Deposit "madoff" 123456)
 
-data Command = Deposit T.Text Int | Balance T.Text
+data Command = Deposit T.Text Int | Balance T.Text | Withdraw T.Text Int
   deriving (Show, Eq)
 
 parseInt :: T.Text -> Maybe Int
 parseInt = readMaybe . T.unpack
 
 parseCommand :: [T.Text] -> Maybe Command
-parseCommand [] = Nothing 
+parseCommand [] = Nothing
 parseCommand (t:ts) 
-  | t == T.pack "balance" = Just (Balance (head ts))
-  | t == T.pack "deposit" = case parseInt (head (tail ts)) of Just x -> Just (Deposit (head ts) x)
-                                                              Nothing -> Nothing
+  | t == T.pack "balance" = if length ts /=1 then Nothing else Just (Balance (head ts))
+  | t == T.pack "deposit" = if length ts /= 2 then Nothing else (case parseInt (head (tail ts)) of Just x ->  Just (Deposit (head ts) x)
+                                                                                                   Nothing -> Nothing)
+  | t == T.pack "withdraw" = if length ts /= 2 then Nothing else (case parseInt (head (tail ts)) of Just x -> Just (Withdraw (head ts) x)
+                                                                                                    Nothing -> Nothing)
   | otherwise = Nothing
 
 ------------------------------------------------------------------------------
@@ -188,8 +190,12 @@ parseCommand (t:ts)
 perform :: Connection -> Maybe Command -> IO T.Text
 perform db c = case c of Just x -> case x of Deposit t i -> do d <- deposit db t i
                                                                return $ T.pack "OK"
+                                             Withdraw t i -> do d <- deposit db t (negate i)
+                                                                return $ T.pack "OK"
                                              Balance t -> do b <- balance db t
                                                              return $ T.pack (show b)
+                         Nothing -> do return $ T.pack "ERROR"
+                                              
                                             
 
 ------------------------------------------------------------------------------
@@ -210,7 +216,7 @@ encodeResponse t = LB.fromStrict (encodeUtf8 t)
 -- Remember:
 -- type Application = Request -> (Response -> IO ResponseReceived) -> IO ResponseReceived
 simpleServer :: Application
-simpleServer request respond = todo
+simpleServer request respond = respond (responseLBS status200 [] (encodeResponse (T.pack "BANK")))
 
 ------------------------------------------------------------------------------
 -- Ex 6: Now we finally have all the pieces we need to actually
@@ -239,7 +245,11 @@ simpleServer request respond = todo
 -- Remember:
 -- type Application = Request -> (Response -> IO ResponseReceived) -> IO ResponseReceived
 server :: Connection -> Application
-server db request respond = todo
+server db request respond = do
+  let path = pathInfo request
+  let cmd = parseCommand path
+  response <- perform db cmd
+  respond (responseLBS status200 [] (encodeResponse response))
 
 port :: Int
 port = 3421
