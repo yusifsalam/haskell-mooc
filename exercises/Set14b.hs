@@ -155,7 +155,12 @@ parseInt :: T.Text -> Maybe Int
 parseInt = readMaybe . T.unpack
 
 parseCommand :: [T.Text] -> Maybe Command
-parseCommand = todo
+parseCommand [] = Nothing 
+parseCommand (t:ts) 
+  | t == T.pack "balance" = Just (Balance (head ts))
+  | t == T.pack "deposit" = case parseInt (head (tail ts)) of Just x -> Just (Deposit (head ts) x)
+                                                              Nothing -> Nothing
+  | otherwise = Nothing
 
 ------------------------------------------------------------------------------
 -- Ex 4: Running commands. Implement the IO operation perform that takes a
@@ -181,7 +186,11 @@ parseCommand = todo
 --   "0"
 
 perform :: Connection -> Maybe Command -> IO T.Text
-perform = todo
+perform db c = case c of Just x -> case x of Deposit t i -> do d <- deposit db t i
+                                                               return $ T.pack "OK"
+                                             Balance t -> do b <- balance db t
+                                                             return $ T.pack (show b)
+                                            
 
 ------------------------------------------------------------------------------
 -- Ex 5: Next up, let's set up a simple HTTP server. Implement a WAI
