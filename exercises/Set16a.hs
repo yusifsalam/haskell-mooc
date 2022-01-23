@@ -50,7 +50,7 @@ isSorted xs = xs === sort xs
 --  +++ OK, passed 1 test.
 
 sumIsLength :: (Show a, Eq a) => [a] -> [(a,Int)] -> Property
-sumIsLength input output = length input === mySum 
+sumIsLength input output = length input === mySum
   where mySum = sum $ map snd output
 
 -- This is a function that passes the sumIsLength test but is wrong
@@ -80,7 +80,7 @@ freq1 (x:y:xs) = [(x,1),(y,length xs + 1)]
 --  +++ OK, passed 100 tests.
 
 inputInOutput :: (Show a, Eq a) => [a] -> [(a,Int)] -> Property
-inputInOutput input output = forAll (elements input) isIn 
+inputInOutput input output = forAll (elements input) isIn
   where isIn a = a `elem` map fst output
 
 -- This function passes both the sumIsLength and inputInOutput tests
@@ -142,7 +142,7 @@ freq3 (x:xs) = [(x,1 + length (filter (==x) xs))]
 --  +++ OK, passed 100 tests.
 
 frequenciesProp :: ([Char] -> [(Char,Int)]) -> NonEmptyList Char -> Property
-frequenciesProp freq input = todo
+frequenciesProp freq (NonEmpty input) = sumIsLength input (freq input) .&&. inputInOutput input (freq input) .&&. outputInInput input (freq input)
 
 frequencies :: Eq a => [a] -> [(a,Int)]
 frequencies [] = []
@@ -173,8 +173,10 @@ frequencies (x:ys) = (x, length xs) : frequencies others
 --  [2,4,10]
 
 genList :: Gen [Int]
-genList = todo
-
+genList = do
+  n <- choose (3,5)
+  v <- vectorOf n (elements [0..10])
+  return $ sort v
 ------------------------------------------------------------------------------
 -- Ex 7: Here are the datatypes Arg and Expression from Set 15. Write
 -- Arbitrary instances for Expression and Arg such that:
@@ -211,7 +213,18 @@ data Expression = Plus Arg Arg | Minus Arg Arg
   deriving (Show, Eq)
 
 instance Arbitrary Arg where
-  arbitrary = todo
+  arbitrary = oneof [genNumber, genVariable]
+    where genNumber = do n <- choose (0,10)
+                         return $ Number n
+          genVariable = do c <- elements ['a', 'b', 'c', 'x','y','z']
+                           return $ Variable c
 
 instance Arbitrary Expression where
-  arbitrary = todo
+  arbitrary = oneof [genPlus, genMinus]
+    where genPlus = do arg1 <- arbitrary :: Gen Arg
+                       arg2 <- arbitrary :: Gen Arg
+                       return $ Plus arg1 arg2
+          genMinus = do arg1 <- arbitrary :: Gen Arg
+                        arg2 <- arbitrary :: Gen Arg
+                        return $ Minus arg1 arg2
+
