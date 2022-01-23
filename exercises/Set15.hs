@@ -190,7 +190,7 @@ validateInt i = check (if head i == '-' then all isDigit (tail i) else all isDig
 --    ==> Errors ["Too long"]
 
 normalizePhone :: String -> Validation String
-normalizePhone s = validateLength (trimString s) *> traverse validateChar (trimString s) 
+normalizePhone s = validateLength (trimString s) *> traverse validateChar (trimString s)
 
 validateLength :: String -> Validation String
 validateLength s = check (length (trimString s) <= 10) "Too long" (trimString s)
@@ -243,7 +243,25 @@ data Expression = Plus Arg Arg | Minus Arg Arg
   deriving (Show, Eq)
 
 parseExpression :: String -> Validation Expression
-parseExpression = todo
+parseExpression s
+  | length (words s) == 3 = makeExpression <$> validateOperator op <*> validateArgument x <*> validateArgument y
+  | otherwise = invalid ("Invalid expression: " ++ s)
+    where [x,op,y] = words s
+
+makeExpression :: String -> Arg -> Arg -> Expression
+makeExpression op x y = if op == "+" then Plus x y else Minus x y
+
+validateOperator :: String -> Validation String
+validateOperator s = check (s == "+" || s == "-") ("Unknown operator: "++s) s
+
+validateVariable :: String -> Validation Arg
+validateVariable s = check (all isAlpha s && length s == 1) ("Invalid variable: "++s) (Variable (head s))
+
+validateNumber :: String -> Validation Arg
+validateNumber s = check (all isNumber s) ("Invalid number: "++s) (Number (read s::Int))
+
+validateArgument :: String -> Validation Arg
+validateArgument s = validateNumber s <|> validateVariable s
 
 ------------------------------------------------------------------------------
 -- Ex 10: The Priced T type tracks a value of type T, and a price
@@ -268,11 +286,11 @@ data Priced a = Priced Int a
   deriving (Show, Eq)
 
 instance Functor Priced where
-  fmap = todo
+  fmap f (Priced a b)= Priced a (f b)
 
 instance Applicative Priced where
-  pure = todo
-  liftA2 = todo
+  pure x = Priced 0 x
+  liftA2 f (Priced a1 b1) (Priced a2 b2) = Priced (a1 + a2) (f b1 b2)
 
 ------------------------------------------------------------------------------
 -- Ex 11: This and the next exercise will use a copy of the
@@ -305,7 +323,7 @@ instance MyApplicative [] where
   myLiftA2 = liftA2
 
 (<#>) :: MyApplicative f => f (a -> b) -> f a -> f b
-f <#> x = todo
+(<#>) = myLiftA2 id
 
 ------------------------------------------------------------------------------
 -- Ex 12: Reimplement fmap using liftA2 and pure. In practical terms,
@@ -322,7 +340,7 @@ f <#> x = todo
 --  myFmap negate [1,2,3]  ==> [-1,-2,-3]
 
 myFmap :: MyApplicative f => (a -> b) -> f a -> f b
-myFmap = todo
+myFmap f a = myPure f <#> a
 
 ------------------------------------------------------------------------------
 -- Ex 13: Given a function that returns an Alternative value, and a
@@ -349,7 +367,7 @@ myFmap = todo
 --       ==> Errors ["zero","zero","zero"]
 
 tryAll :: Alternative f => (a -> f b) -> [a] -> f b
-tryAll = todo
+tryAll f = foldr ((<|>) . f) empty
 
 ------------------------------------------------------------------------------
 -- Ex 14: Here's the type `Both` that expresses the composition of
@@ -374,7 +392,7 @@ newtype Both f g a = Both (f (g a))
   deriving Show
 
 instance (Functor f, Functor g) => Functor (Both f g) where
-  fmap = todo
+  fmap g (Both f) = Both (fmap (fmap g) f)
 
 ------------------------------------------------------------------------------
 -- Ex 15: The composition of two Applicatives is also an Applicative!
@@ -402,5 +420,5 @@ instance (Functor f, Functor g) => Functor (Both f g) where
 --              Errors ["fail 1","fail 2"]]
 
 instance (Applicative f, Applicative g) => Applicative (Both f g) where
-  pure = todo
-  liftA2 = todo
+  pure = Both . pure . pure
+  liftA2 f (Both g) (Both h)= Both (liftA2 (liftA2 f) g h)
