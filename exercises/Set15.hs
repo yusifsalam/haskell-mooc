@@ -17,7 +17,7 @@ import Text.Read (readMaybe)
 --  sumTwoMaybes Nothing Nothing    ==> Nothing
 
 sumTwoMaybes :: Maybe Int -> Maybe Int -> Maybe Int
-sumTwoMaybes = todo
+sumTwoMaybes = liftA2 (+)
 
 ------------------------------------------------------------------------------
 -- Ex 2: Given two lists of words, xs and ys, generate all statements
@@ -36,7 +36,8 @@ sumTwoMaybes = todo
 --         "code is not suffering","code is not life"]
 
 statements :: [String] -> [String] -> [String]
-statements = todo
+statements a b = say <$> a <*> b <*> ["", "not "]
+  where say x y z = x ++ " is " ++ z ++ y
 
 ------------------------------------------------------------------------------
 -- Ex 3: A simple calculator with error handling. Given an operation
@@ -54,7 +55,15 @@ statements = todo
 --  calculator "double" "7x"  ==> Nothing
 
 calculator :: String -> String -> Maybe Int
-calculator = todo
+calculator f a = parseFunc f <*> readMaybe a
+
+parseFunc:: Num a => String -> Maybe (a -> a)
+parseFunc "negate" = Just negate
+parseFunc "double" = Just double
+parseFunc _ = Nothing
+
+double:: Num a => a -> a
+double x = 2*x
 
 ------------------------------------------------------------------------------
 -- Ex 4: Safe division. Implement the function validateDiv that
@@ -71,7 +80,7 @@ calculator = todo
 --  validateDiv 0 3 ==> Ok 0
 
 validateDiv :: Int -> Int -> Validation Int
-validateDiv = todo
+validateDiv a b = check (b /= 0) "Division by zero!" (a `div` b)
 
 ------------------------------------------------------------------------------
 -- Ex 5: Validating street addresses. A street address consists of a
@@ -101,7 +110,12 @@ data Address = Address String String String
   deriving (Show,Eq)
 
 validateAddress :: String -> String -> String -> Validation Address
-validateAddress streetName streetNumber postCode = todo
+validateAddress streetName streetNumber postCode = validateAll
+  where vName = check (length streetName <= 20) "Invalid street name" streetName
+        vNumber = check (all isDigit streetNumber) "Invalid street number" streetNumber
+        vPostcode = check (length postCode == 5 && all isDigit postCode) "Invalid postcode" postCode
+        validateAll = Address <$> vName <*> vNumber <*> vPostcode
+
 
 ------------------------------------------------------------------------------
 -- Ex 6: Given the names, ages and employment statuses of two
@@ -123,8 +137,10 @@ data Person = Person String Int Bool
 twoPersons :: Applicative f =>
   f String -> f Int -> f Bool -> f String -> f Int -> f Bool
   -> f [Person]
-twoPersons name1 age1 employed1 name2 age2 employed2 = todo
+twoPersons name1 age1 employed1 name2 age2 employed2 = combine <$> (Person <$> name1 <*> age1 <*> employed1) <*> (Person <$> name2 <*> age2 <*> employed2)
 
+combine:: Person -> Person -> [Person]
+combine a b = a:[b]
 ------------------------------------------------------------------------------
 -- Ex 7: Validate a String that's either a Bool or an Int. The return
 -- type of the function uses Either Bool Int to be able to represent
@@ -143,7 +159,14 @@ twoPersons name1 age1 employed1 name2 age2 employed2 = todo
 --  boolOrInt "Falseb"  ==> Errors ["Not a Bool","Not an Int"]
 
 boolOrInt :: String -> Validation (Either Bool Int)
-boolOrInt = todo
+boolOrInt s = validateBool s <|> validateInt s
+
+validateBool :: String -> Validation (Either Bool Int)
+validateBool b = check (b == "True" || b == "False") "Not a Bool" (Left (read b::Bool))
+
+
+validateInt :: String -> Validation (Either Bool Int)
+validateInt i = check (if head i == '-' then all isDigit (tail i) else all isDigit i) "Not an Int" (Right (read i::Int))
 
 ------------------------------------------------------------------------------
 -- Ex 8: Improved phone number validation. Implement the function
@@ -167,7 +190,16 @@ boolOrInt = todo
 --    ==> Errors ["Too long"]
 
 normalizePhone :: String -> Validation String
-normalizePhone = todo
+normalizePhone s = validateLength (trimString s) *> traverse validateChar (trimString s) 
+
+validateLength :: String -> Validation String
+validateLength s = check (length (trimString s) <= 10) "Too long" (trimString s)
+
+validateChar :: Char -> Validation Char
+validateChar s = check (isDigit s) ("Invalid character: "++[s]) s
+
+trimString :: String -> String
+trimString = filter (/= ' ')
 
 ------------------------------------------------------------------------------
 -- Ex 9: Parsing expressions. The Expression type describes an
